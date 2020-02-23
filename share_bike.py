@@ -34,31 +34,45 @@ y = Variable(torch.FloatTensor(np.array(counts,dtype = float)))
 n_size = 10
 
 weight1 = Variable(torch.randn(1,n_size),requires_grad = True)
-biase1 = Variable(torch.randn(n_size,1),requires_grad = True)
+biase1 = Variable(torch.randn(n_size),requires_grad = True)
 weight2 = Variable(torch.randn(n_size,1),requires_grad = True)
 
-lr = 0.1
+#下面这个是换了一种公式，理论上是一样的
+weight11 = Variable(torch.randn(n_size,1),requires_grad = True)
+biase11 = Variable(torch.randn(n_size,1),requires_grad = True)
+weight22 = Variable(torch.randn(1,n_size),requires_grad = True)
+
+lr = 0.001
 losses = []
 for i in range(10000):
     # hidden = x.mm(weight1)+biase1
-    hidden = x.expand(n_size,len(x)).t()*weight1.expand(len(x),n_size)+biase1.expand(len(x),n_size)
-
+    # hidden = x.expand(n_size,len(x)).t()*weight1.expand(len(x),n_size)+biase1.expand(len(x),n_size)
+    hidden = weight11.mm(x.expand(1,50))+biase11.expand(10,50)
 
     hidden = torch.sigmoid(hidden)
-    pred = hidden.mm(weight2)
+    # pred = hidden.mm(weight2)
+    pred = weight22.mm(hidden)
     loss = torch.mean((pred-y)**2)
     losses.append(loss.data.numpy())
-    if i%1000 == 0:
+    if i%10000 == 0:
         print('loss is ',loss)
 
     loss.backward()
-    weight1.data.add_(-lr*weight1.grad.data)
-    weight2.data.add_(-lr*weight2.grad.data)
-    biase1.data.add_(-lr*biase1.grad.data)
+    # weight1.data.add_(-lr*weight1.grad.data)
+    # weight2.data.add_(-lr*weight2.grad.data)
+    # biase1.data.add_(-lr*biase1.grad.data)
+    #
+    # weight1.grad.data.zero_()
+    # weight2.grad.data.zero_()
+    # biase1.grad.data.zero_()
 
-    weight1.grad.data.zero_()
-    weight2.grad.data.zero_()
-    biase1.grad.data.zero_()
+    weight11.data.add_(-lr * weight11.grad.data)
+    weight22.data.add_(-lr * weight22.grad.data)
+    biase11.data.add_(-lr * biase11.grad.data)
+
+    weight11.grad.data.zero_()
+    weight22.grad.data.zero_()
+    biase11.grad.data.zero_()
 
 plt.plot(losses)
 plt.xlabel('Epoch')
@@ -74,7 +88,7 @@ plt.figure(figsize=(10,8))
 # plt.plot(x_train.data.numpy(),y_train.data.numpy(),'o')
 xplot, = plt.plot(x_data,y.data.numpy(),'o')
 #the origin data
-yplot, = plt.plot(x_data,pred.data.numpy())
+yplot, = plt.plot(x_data,pred.data.numpy().transpose())
 
 plt.legend([xplot,yplot],['DATA','prediction'])
 
